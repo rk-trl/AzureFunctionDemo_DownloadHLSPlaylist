@@ -1,0 +1,32 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Play Video from Azure Function</title>
+</head>
+<body>
+    <h1>Video Player Example</h1>
+
+    <!-- Video element -->
+    <video id="videoPlayer" width="640" height="360" controls></video>
+
+    <!-- Button to load video -->
+    <button id="playButton">Play Video</button>
+
+    <script>
+        const playButton = document.getElementById('playButton');
+        const videoPlayer = document.getElementById('videoPlayer');
+
+        playButton.addEventListener('click', () => {
+            // Replace with your Azure Function URL
+            const videoUrl = 'https://videodownloadfunctiondemo.azurewebsites.net/api/GetVideo';
+
+            // Set video source
+            videoPlayer.src = videoUrl;
+
+            // Play video
+            videoPlayer.play();
+        });
+    </script>
+</body>
+</html>
