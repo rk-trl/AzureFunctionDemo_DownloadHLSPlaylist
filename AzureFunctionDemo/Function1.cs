@@ -7,6 +7,7 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Net;
+using System.Web;
 
 namespace AzureFunctionDemo;
 
@@ -22,6 +23,7 @@ public class Function1
     {
         _logger = logger;
          //configuration["BLOB_CONNECTION_STRING"];
+         _connectionString = "";
     }
 
     [Function("Function1")]
@@ -40,23 +42,6 @@ public class Function1
 
         try
         {
-            //// Directly access the known playlist file
-            //var blobName = $"{videoName}.m3u8";
-            //var blobClient = new BlobClient(_connectionString, _containerName, blobName);
-
-            //if (!await blobClient.ExistsAsync())
-            //{
-            //    _logger.LogWarning($"Playlist not found: {videoName}.m3u8");
-            //    response.StatusCode = HttpStatusCode.NotFound;
-            //    await response.WriteStringAsync("Playlist not found");
-            //    return response;
-            //}
-
-            //response.Headers.Add("Content-Type", "application/vnd.apple.mpegurl");
-            //var stream = await blobClient.OpenReadAsync();
-            //await stream.CopyToAsync(response.Body);
-
-
             _logger.LogInformation($"Fetching playlist for video: {videoName}");
 
             var blobClient = new BlobClient(_connectionString, _containerName, $"{videoName}.m3u8");
@@ -81,7 +66,10 @@ public class Function1
                 var line = match.Groups[2].Value.Trim();
                 if (line.EndsWith(".ts", StringComparison.OrdinalIgnoreCase))
                 {
-                    return $"{match.Groups[1].Value}{baseUrl}{line}";
+                    // Encode the segment name
+                    var encoded = HttpUtility.UrlEncode(Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(line)));
+
+                    return $"{match.Groups[1].Value}{baseUrl}{encoded}";
                 }
                 return match.Value;
             });
@@ -115,8 +103,12 @@ public class Function1
 
         try
         {
+            var decodedBytes = Convert.FromBase64String(HttpUtility.UrlDecode(segment));
+            var decodedSegment = System.Text.Encoding.UTF8.GetString(decodedBytes);
 
-            var blobClient = new BlobClient(_connectionString, _containerName, segment);
+
+
+            var blobClient = new BlobClient(_connectionString, _containerName, decodedSegment);
            
             if (!await blobClient.ExistsAsync())
             {
